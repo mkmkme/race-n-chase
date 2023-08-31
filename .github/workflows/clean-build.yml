@@ -1,0 +1,42 @@
+name: Clean build
+run-name: 🚘 Test if the project compiles on multiple platforms
+on: [push]
+jobs:
+  Linux-Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐧 Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install libgl1-mesa-dev ninja-build
+      - name: 🐸 Install Conan
+        run: pipx install conan
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: ⚙️ Install dependencies
+        run: |
+          conan profile detect --force
+          ./conan-install.sh
+      - name: ⚒️ Build 🐧
+        run: |
+          cmake --preset 'Gcc' -B build/gcc/ -DCMAKE_BUILD_TYPE='Release'
+          cmake --build build/gcc/ --preset 'Gcc Release'
+  Windows-Build:
+    runs-on: windows-latest
+    steps:
+      - name: 🐸 Install Conan
+        run: pipx install conan
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: ⚙️ Install dependencies
+        run: |
+          conan profile detect --force
+          conan install ${{ github.workspace }} `
+              -u -b missing `
+              -c:h tools.cmake.cmake_layout:build_folder_vars="['settings.compiler']"
+      - name: ⚒️ Build 🪟
+        run: |
+          cmake --preset 'MSVC' -B build/msvc/ -DCMAKE_BUILD_TYPE='Release'
+          cmake --build build/msvc/ --preset 'MSVC Release'
