@@ -1,7 +1,9 @@
-#include <iostream>
+#include <fmt/format.h>
 
-int main()
+int main(int argc, char *argv[])
 {
-    std::cout << "Hello, World!" << std::endl;
+    if (argc != 2) {
+        return 1;
+    }
     return 0;
 }
