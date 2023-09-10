@@ -1,0 +1,2 @@
+[workspace]
+members = ["car-dump", "fxt2txt"]
