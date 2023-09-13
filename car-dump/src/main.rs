@@ -1,5 +1,5 @@
-use std::env;
 use env_logger::Env;
+use std::env;
 
 #[macro_use]
 extern crate log;

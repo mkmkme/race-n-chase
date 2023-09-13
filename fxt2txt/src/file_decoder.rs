@@ -3,13 +3,13 @@ use std::{
     io::{BufReader, Read},
 };
 
-pub(super) trait Decoder {
+pub trait Decoder {
     fn position(&self) -> usize;
     fn next_char(&mut self) -> Result<char, std::io::Error>;
 }
 
 /// A decoder that reads from a file byte by byte and decodes the bytes into characters.
-pub(super) struct FileDecoder {
+pub struct FileDecoder {
     reader: BufReader<File>,
     cur_char: [u8; 1],
     cur_pos: usize,
@@ -59,6 +59,8 @@ impl Decoder for FileDecoder {
             self.char_unread = false;
             return Ok(self.decode_char());
         }
-        self.reader.read_exact(&mut self.cur_char).map(|_| self.decode_char())
+        self.reader
+            .read_exact(&mut self.cur_char)
+            .map(|_| self.decode_char())
     }
 }

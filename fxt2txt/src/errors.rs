@@ -1,6 +1,5 @@
 use thiserror::Error;
 
-
 #[derive(Error, Debug)]
 pub enum FXTError {
     #[error("Unexpected key at position {0}")]

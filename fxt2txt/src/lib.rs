@@ -6,7 +6,7 @@ use file_decoder::Decoder;
 extern crate log;
 
 pub mod errors;
-mod file_decoder;
+pub mod file_decoder;
 
 use errors::FXTError;
 
@@ -53,7 +53,7 @@ fn parse_fxt_impl<T: Decoder>(decoder: T) -> Result<HashMap<String, String>, FXT
             }
             FXTToken::Value(value) => {
                 if let Some(FXTToken::Key(key)) = cur_key.take() {
-                    ret.insert(key.into(), value);
+                    ret.insert(key, value);
                 } else {
                     warn!(
                         "Got value '{}' without key at position {}",
@@ -149,7 +149,7 @@ impl<T: Decoder> Parser<T> {
 mod tests {
     use super::*;
 
-    const CONST_STR: &'static str =
+    const CONST_STR: &str =
                 "[1001]Hello, world!\u{0}[1002]Yes, it works!\u{0}[1003]One-word\u{0}[1004]tschüss\u{0}[][]";
     struct MockDecoder(usize);
 
