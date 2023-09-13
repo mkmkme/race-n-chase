@@ -59,11 +59,6 @@ impl Decoder for FileDecoder {
             self.char_unread = false;
             return Ok(self.decode_char());
         }
-        match self.reader.read_exact(&mut self.cur_char) {
-            Ok(_) => Ok(self.decode_char()),
-            Err(e) => {
-                Err(e)
-            }
-        }
+        self.reader.read_exact(&mut self.cur_char).map(|_| self.decode_char())
     }
 }
