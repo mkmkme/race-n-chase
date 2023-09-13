@@ -1,4 +1,5 @@
 use std::env;
+use env_logger::Env;
 
 #[macro_use]
 extern crate log;
@@ -13,7 +14,7 @@ fn main() -> MainResult {
         return Err(error::RNCError::InvalidArguments)?;
     }
 
-    env_logger::init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let car_file = &args[1];
     info!("car_file: {}", &car_file);

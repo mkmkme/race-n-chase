@@ -3,14 +3,14 @@ use std::fmt;
 #[derive(Debug, derive_more::From)]
 pub enum RNCError {
     InvalidArguments,
-    FileNotFound,
+    // FileNotFound,
 }
 
 impl std::fmt::Display for RNCError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             RNCError::InvalidArguments => write!(f, "Invalid arguments!\n\nUsage: car-dump <car_file>"),
-            RNCError::FileNotFound => write!(f, "File not found"),
+            // RNCError::FileNotFound => write!(f, "File not found"),
         }
     }
 }
