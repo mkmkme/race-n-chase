@@ -1,42 +1,86 @@
-name: Clean build
-run-name: 🚘 Test if the project compiles on multiple platforms
-on: [push]
+name: CI
+
+on: [pull_request, push]
+
 jobs:
-  Linux-Build:
+  lints:
+    name: Lints
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🐧 Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install libgl1-mesa-dev ninja-build
-      - name: 🐸 Install Conan
-        run: pipx install conan
-      - name: Check out repository code
+      - name: Checkout
         uses: actions/checkout@v3
-      - name: ⚙️ Install dependencies
-        run: |
-          conan profile detect --force
-          ./conan-install.sh
-      - name: ⚒️ Build 🐧
-        run: |
-          cmake --preset 'Gcc' -B build/gcc/ -DCMAKE_BUILD_TYPE='Release'
-          cmake --build build/gcc/ --preset 'Gcc Release'
-  Windows-Build:
-    runs-on: windows-latest
-    steps:
-      - name: 🐸 Install Conan
-        run: pipx install conan
-      - name: Check out repository code
-        uses: actions/checkout@v3
+
+      - name: 🦀 Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          fetch-depth: 0
-      - name: ⚙️ Install dependencies
+          toolchain: stable
+          components: clippy, rustfmt
+          profile: minimal
+          override: true
+
+      - run: cargo fmt --all -- --check
+
+      - run: cargo clippy --all --tests -- -D warnings
+
+  build:
+    name: ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        build: [Linux, macOS, Win32, Win64, Linux-beta]
+
+        include:
+          - build: Linux
+            os: ubuntu-latest
+          - build: macOS
+            os: macOS-latest
+          - build: Win32
+            os: windows-latest
+            rust: stable-i686-pc-windows-msvc
+            target: i686-pc-windows-msvc
+          - build: Win64
+            os: windows-latest
+          - build: Linux-beta
+            os: ubuntu-latest
+            rust: beta
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/resvg
+            target
+          key: ${{ runner.os }}-${{ matrix.build }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: 🦀 Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust || 'stable' }}
+          target: ${{ matrix.target }}
+          profile: minimal
+          override: true
+
+      - name: Install packages (Linux)
+        if: runner.os == 'Linux'
         run: |
-          conan profile detect --force
-          conan install ${{ github.workspace }} `
-              -u -b missing `
-              -c:h tools.cmake.cmake_layout:build_folder_vars="['settings.compiler']"
-      - name: ⚒️ Build 🪟
-        run: |
-          cmake --preset 'MSVC' -B build/msvc/ -DCMAKE_BUILD_TYPE='Release'
-          cmake --build build/msvc/ --preset 'MSVC Release'
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install libx11-dev libxi-dev libgl1-mesa-dev libasound2-dev
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --examples --all
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all
