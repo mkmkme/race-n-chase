@@ -35,7 +35,9 @@ pub fn parse_fxt(filename: &str) -> Result<HashMap<String, String>, FXTError> {
     parse_fxt_impl(decoder)
 }
 
-fn parse_fxt_impl<T: Decoder>(decoder: T) -> Result<HashMap<String, String>, FXTError> {
+fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(
+    decoder: T,
+) -> Result<HashMap<String, String>, FXTError> {
     let mut ret = HashMap::new();
     let mut cur_key = None;
     let mut parser = Parser::new(decoder);
@@ -76,7 +78,7 @@ fn parse_fxt_impl<T: Decoder>(decoder: T) -> Result<HashMap<String, String>, FXT
     }
 }
 
-impl<T: Decoder> Parser<T> {
+impl<T: Decoder + Iterator<Item = char>> Parser<T> {
     fn new(decoder: T) -> Self {
         Parser {
             state: State::End,
@@ -90,58 +92,42 @@ impl<T: Decoder> Parser<T> {
 
     fn parse_token(&mut self) -> FXTToken {
         let mut internal = String::new();
-        loop {
-            match self.decoder.next_char() {
-                Ok(c) => match c {
-                    '[' => {
-                        if self.state == State::Key {
-                            panic!("Unexpected '[' at position {}", self.decoder.position());
-                        }
-                        self.state = State::Key;
-                        if !internal.is_empty() {
-                            return FXTToken::Value(internal);
-                        }
+        for c in self.decoder.by_ref() {
+            match c {
+                '[' => {
+                    if self.state == State::Key {
+                        panic!("Unexpected '[' at position {}", self.decoder.position());
                     }
-                    ']' => {
-                        if self.state == State::Value {
-                            panic!("Unexpected ']' at position {}", self.decoder.position());
-                        }
-                        self.state = State::Value;
-                        if !internal.is_empty() {
-                            return FXTToken::Key(internal);
-                        }
+                    self.state = State::Key;
+                    if !internal.is_empty() {
+                        return FXTToken::Value(internal);
                     }
-                    // Values can contain null bytes
-                    '\u{0}' => {
-                        if self.state != State::Value {
-                            panic!(
-                                "Unexpected null byte at position {}",
-                                self.decoder.position()
-                            );
-                        }
-                        continue;
+                }
+                ']' => {
+                    if self.state == State::Value {
+                        panic!("Unexpected ']' at position {}", self.decoder.position());
                     }
-                    _ => {
-                        internal.push(c);
+                    self.state = State::Value;
+                    if !internal.is_empty() {
+                        return FXTToken::Key(internal);
                     }
-                },
-                Err(e) => match e.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        if self.state == State::Key {
-                            panic!("Unexpected EOF at position {}", self.decoder.position());
-                        }
-                        self.state = State::End;
-                        if !internal.is_empty() {
-                            return FXTToken::Value(internal);
-                        }
-                        return FXTToken::End;
+                }
+                // Values can contain null bytes
+                '\u{0}' => {
+                    if self.state != State::Value {
+                        panic!(
+                            "Unexpected null byte at position {}",
+                            self.decoder.position()
+                        );
                     }
-                    _ => {
-                        panic!("e: {}", e);
-                    }
-                },
+                    continue;
+                }
+                _ => {
+                    internal.push(c);
+                }
             }
         }
+        FXTToken::End
     }
 }
 
@@ -163,31 +149,22 @@ mod tests {
         fn position(&self) -> usize {
             self.0
         }
+    }
 
-        fn next_char(&mut self) -> Result<char, std::io::Error> {
-            let char = CONST_STR.chars().nth(self.0);
-            match char {
-                Some(char) => {
-                    self.0 += 1;
-                    Ok(char)
-                }
-                None => Err(std::io::Error::new(
-                    std::io::ErrorKind::UnexpectedEof,
-                    "EOF",
-                )),
-            }
+    impl Iterator for MockDecoder {
+        type Item = char;
+        fn next(&mut self) -> Option<Self::Item> {
+            let pos = self.0;
+            self.0 += 1;
+            CONST_STR.chars().nth(pos)
         }
     }
 
     #[test]
     fn mock_works() {
-        let mut decoder = MockDecoder::new();
-        assert_eq!(decoder.next_char().unwrap(), '[');
-        assert_eq!(decoder.next_char().unwrap(), '1');
-        assert_eq!(decoder.next_char().unwrap(), '0');
-        assert_eq!(decoder.next_char().unwrap(), '0');
-        assert_eq!(decoder.next_char().unwrap(), '1');
-        assert_eq!(decoder.next_char().unwrap(), ']');
+        let decoder = MockDecoder::new();
+        let first_six: String = decoder.take(6).collect();
+        assert_eq!(first_six, "[1001]");
     }
 
     #[test]

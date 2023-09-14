@@ -1,4 +1,4 @@
-use fxt2txt::file_decoder::{Decoder, FileDecoder};
+use fxt2txt::file_decoder::FileDecoder;
 use main_error::MainResult;
 
 fn main() -> MainResult {
@@ -8,9 +8,8 @@ fn main() -> MainResult {
     }
 
     let fxt_file = &args[1];
-    let mut decoder = FileDecoder::new(fxt_file)?;
-    while let Ok(c) = decoder.next_char() {
-        print!("{}", c);
-    }
+    let decoder = FileDecoder::new(fxt_file)?;
+    let str: String = decoder.into_iter().collect();
+    println!("{}", &str);
     Ok(())
 }

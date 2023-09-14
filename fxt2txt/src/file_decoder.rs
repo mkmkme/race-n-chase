@@ -5,7 +5,6 @@ use std::{
 
 pub trait Decoder {
     fn position(&self) -> usize;
-    fn next_char(&mut self) -> Result<char, std::io::Error>;
 }
 
 /// A decoder that reads from a file byte by byte and decodes the bytes into characters.
@@ -49,18 +48,23 @@ impl FileDecoder {
     }
 }
 
-impl Decoder for FileDecoder {
-    fn position(&self) -> usize {
-        self.cur_pos
-    }
+impl Iterator for FileDecoder {
+    type Item = char;
 
-    fn next_char(&mut self) -> Result<char, std::io::Error> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.char_unread {
             self.char_unread = false;
-            return Ok(self.decode_char());
+            return Some(self.decode_char());
         }
         self.reader
             .read_exact(&mut self.cur_char)
             .map(|_| self.decode_char())
+            .ok()
+    }
+}
+
+impl Decoder for FileDecoder {
+    fn position(&self) -> usize {
+        self.cur_pos
     }
 }
