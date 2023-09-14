@@ -21,7 +21,7 @@ fn main() -> MainResult {
     if let Some(key) = key {
         let value = map
             .get(key)
-            .expect(format!("Key '{key}' not found").as_str());
+            .unwrap_or_else(|| panic!("Key '{}' not found", &key));
         println!("{key} = '{value}'");
     } else {
         println!("{:?}", &map);
