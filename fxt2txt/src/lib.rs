@@ -5,10 +5,7 @@ use file_decoder::Decoder;
 #[macro_use]
 extern crate log;
 
-pub mod errors;
 pub mod file_decoder;
-
-use errors::FXTError;
 
 #[derive(Debug)]
 enum FXTToken {
@@ -30,14 +27,11 @@ struct Parser<T: Decoder> {
 }
 
 /// Parses a FXT file and returns a HashMap with the keys and values.
-pub fn parse_fxt(filename: &str) -> Result<HashMap<String, String>, FXTError> {
-    let decoder = file_decoder::FileDecoder::new(filename)?;
-    parse_fxt_impl(decoder)
+pub fn parse_fxt(filename: &str) -> Result<HashMap<String, String>, std::io::Error> {
+    file_decoder::FileDecoder::new(filename).map(parse_fxt_impl)
 }
 
-fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(
-    decoder: T,
-) -> Result<HashMap<String, String>, FXTError> {
+fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(decoder: T) -> HashMap<String, String> {
     let mut ret = HashMap::new();
     let mut cur_key = None;
     let mut parser = Parser::new(decoder);
@@ -74,7 +68,7 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(
                         parser.get_position()
                     );
                 }
-                return Ok(ret);
+                return ret;
             }
         }
     }
@@ -175,7 +169,7 @@ mod tests {
     fn parsing_works() {
         env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
         let decoder = MockDecoder::new();
-        let map = parse_fxt_impl(decoder).unwrap();
+        let map = parse_fxt_impl(decoder);
         assert_eq!(map.get("1001").unwrap(), "Hello, world!");
         assert_eq!(map.get("1002").unwrap(), "Yes, it works!");
         assert_eq!(map.get("1003").unwrap(), "One-word");
