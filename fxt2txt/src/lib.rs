@@ -19,9 +19,9 @@ enum FXTToken {
 
 #[derive(PartialEq, Eq)]
 enum State {
-    Key,
-    Value,
-    End,
+    NewToken,
+    ParsingKey,
+    ParsingValue,
 }
 
 struct Parser<T: Decoder> {
@@ -42,7 +42,9 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(
     let mut cur_key = None;
     let mut parser = Parser::new(decoder);
     loop {
-        match parser.parse_token() {
+        let token = parser.parse_token();
+        debug!("Got token: {:?}", token);
+        match token {
             FXTToken::Key(key) => {
                 if cur_key.is_some() {
                     warn!(
@@ -81,7 +83,7 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(
 impl<T: Decoder + Iterator<Item = char>> Parser<T> {
     fn new(decoder: T) -> Self {
         Parser {
-            state: State::End,
+            state: State::NewToken,
             decoder,
         }
     }
@@ -95,32 +97,30 @@ impl<T: Decoder + Iterator<Item = char>> Parser<T> {
         for c in self.decoder.by_ref() {
             match c {
                 '[' => {
-                    if self.state == State::Key {
-                        panic!("Unexpected '[' at position {}", self.decoder.position());
-                    }
-                    self.state = State::Key;
-                    if !internal.is_empty() {
-                        return FXTToken::Value(internal);
+                    if self.state == State::NewToken {
+                        self.state = State::ParsingKey;
+                    } else {
+                        internal.push(c);
                     }
                 }
                 ']' => {
-                    if self.state == State::Value {
-                        panic!("Unexpected ']' at position {}", self.decoder.position());
-                    }
-                    self.state = State::Value;
-                    if !internal.is_empty() {
+                    if self.state == State::ParsingKey {
+                        self.state = State::ParsingValue;
                         return FXTToken::Key(internal);
+                    } else {
+                        internal.push(c);
                     }
                 }
-                // Values can contain null bytes
+                // Values end with null byte
                 '\u{0}' => {
-                    if self.state != State::Value {
+                    if self.state != State::ParsingValue {
                         panic!(
                             "Unexpected null byte at position {}",
                             self.decoder.position()
                         );
                     }
-                    continue;
+                    self.state = State::NewToken;
+                    return FXTToken::Value(internal);
                 }
                 _ => {
                     internal.push(c);
@@ -133,10 +133,14 @@ impl<T: Decoder + Iterator<Item = char>> Parser<T> {
 
 #[cfg(test)]
 mod tests {
+    use env_logger::Env;
+
     use super::*;
 
     const CONST_STR: &str =
-                "[1001]Hello, world!\u{0}[1002]Yes, it works!\u{0}[1003]One-word\u{0}[1004]tschüss\u{0}[][]";
+        "[1001]Hello, world!\u{0}[1002]Yes, it works!\u{0}[1003]One-word\u{0}[1004]tschüss\u{0}\
+        [1005]Message with closing bracket] inside\u{0}\
+        []\u{0}[]\u{0}";
     struct MockDecoder(usize);
 
     impl MockDecoder {
@@ -169,11 +173,16 @@ mod tests {
 
     #[test]
     fn parsing_works() {
+        env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
         let decoder = MockDecoder::new();
         let map = parse_fxt_impl(decoder).unwrap();
         assert_eq!(map.get("1001").unwrap(), "Hello, world!");
         assert_eq!(map.get("1002").unwrap(), "Yes, it works!");
         assert_eq!(map.get("1003").unwrap(), "One-word");
         assert_eq!(map.get("1004").unwrap(), "tschüss");
+        assert_eq!(
+            map.get("1005").unwrap(),
+            "Message with closing bracket] inside"
+        );
     }
 }
