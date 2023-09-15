@@ -1,2 +1,2 @@
 [workspace]
-members = ["car-dump", "fxt2txt"]
+members = ["car-dump", "fxt2txt", "g24parser"]
