@@ -4,7 +4,3 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-derive_more = "0.99.17"
-env_logger = "0.10.0"
-log = "0.4.20"
-main_error = "0.1.2"
