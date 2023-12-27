@@ -10,7 +10,7 @@ pub trait Decoder {
 /// A decoder that reads from a file byte by byte and decodes the bytes into characters.
 pub struct FileDecoder {
     reader: BufReader<File>,
-    cur_char: [u8; 1],
+    cur_char: u8,
     cur_pos: usize,
     char_unread: bool,
 }
@@ -20,7 +20,7 @@ impl FileDecoder {
         let file = File::open(filename)?;
         Ok(FileDecoder {
             reader: BufReader::new(file),
-            cur_char: [0; 1],
+            cur_char: 0,
             cur_pos: 0,
             char_unread: false,
         })
@@ -35,7 +35,7 @@ impl FileDecoder {
     /// subtracted by 1, then the result is subtracted by 0x63 shifted by the
     /// current position. The result is then converted to a character.
     fn decode_char(&mut self) -> char {
-        let mut c = self.cur_char[0] as i16;
+        let mut c = self.cur_char as i16;
         c -= 1;
         if self.cur_pos <= 7 {
             c -= 0x63 << self.cur_pos;
@@ -57,7 +57,7 @@ impl Iterator for FileDecoder {
             return Some(self.decode_char());
         }
         self.reader
-            .read_exact(&mut self.cur_char)
+            .read_exact(std::slice::from_mut(&mut self.cur_char))
             .map(|_| self.decode_char())
             .ok()
     }
