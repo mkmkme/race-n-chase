@@ -42,9 +42,8 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(decoder: T) -> HashMap<Str
             FXTToken::Key(key) => {
                 if cur_key.is_some() {
                     warn!(
-                        "Got key '{}' without value at position {}",
-                        key,
-                        parser.get_position()
+                        "Got key '{key}' without value at position {pos}",
+                        pos = parser.get_position()
                     );
                 }
                 cur_key = Some(FXTToken::Key(key));
@@ -54,18 +53,16 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(decoder: T) -> HashMap<Str
                     ret.insert(key, value);
                 } else {
                     warn!(
-                        "Got value '{}' without key at position {}",
-                        value,
-                        parser.get_position()
+                        "Got value '{value}' without key at position {pos}",
+                        pos = parser.get_position()
                     );
                 }
             }
             FXTToken::End => {
                 if let Some(FXTToken::Key(key)) = cur_key.take() {
                     warn!(
-                        "Got key without value at the end: {}, position {}",
-                        key,
-                        parser.get_position()
+                        "Got key without value at the end: {key}, position {pos}",
+                        pos = parser.get_position()
                     );
                 }
                 return ret;
