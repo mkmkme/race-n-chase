@@ -11,10 +11,7 @@ extern crate log;
 const HEADER_GRAPHICS_VERSION: u32 = 336;
 const EXPECTED_SPRITE_NUMBER: u32 = 42;
 
-pub struct G24Parser {
-    reader: BufReader<File>,
-    buf_u32: [u8; 4],
-}
+pub struct G24Parser(BufReader<File>);
 
 pub struct G24Header {
     side_size: u32,
@@ -67,18 +64,16 @@ pub enum G24ParserError {
 impl G24Parser {
     pub fn new(filename: &str) -> Result<G24Parser, std::io::Error> {
         let file = File::open(filename)?;
-        Ok(G24Parser {
-            reader: BufReader::new(file),
-            buf_u32: [0; 4],
-        })
+        Ok(G24Parser(BufReader::new(file)))
     }
 
     pub fn parse_header(&mut self) -> Result<G24Header, G24ParserError> {
+        let mut buf_u32 = [0u8; 4];
         let mut read_u32 = || {
-            self.reader
-                .read_exact(&mut self.buf_u32)
+            self.0
+                .read_exact(&mut buf_u32)
                 .expect("Failed to read u32");
-            u32::from_le_bytes(self.buf_u32)
+            u32::from_le_bytes(buf_u32)
         };
 
         let version = read_u32();
