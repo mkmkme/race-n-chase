@@ -67,7 +67,13 @@ impl G24Parser {
         Ok(G24Parser(BufReader::new(file)))
     }
 
-    pub fn parse_header(&mut self) -> Result<G24Header, G24ParserError> {
+    pub fn parse(&mut self) -> Result<(), G24ParserError> {
+        let header = self.parse_header()?;
+        info!("Header: {}", header);
+        Ok(())
+    }
+
+    fn parse_header(&mut self) -> Result<G24Header, G24ParserError> {
         let mut buf_u32 = [0u8; 4];
         let mut read_u32 = || {
             self.0
@@ -133,4 +139,10 @@ impl G24Parser {
             sprite_numbers_size,
         })
     }
+
+    fn parse_tile_textures(&mut self) -> Result<(), G24ParserError> {
+        // TODO: does rawTiles hide some struct in it? Why is it char* ?
+        unimplemented!()
+    }
+
 }

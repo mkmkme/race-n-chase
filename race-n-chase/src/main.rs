@@ -74,7 +74,6 @@ fn run_fxt2txt(filename: &str, key: Option<&str>) -> MainResult {
 
 fn run_dump_g24_header(filename: &str) -> MainResult {
     let mut parser = G24Parser::new(filename)?;
-    let header = parser.parse_header()?;
-    println!("{header}");
+    parser.parse()?;
     Ok(())
 }
