@@ -70,9 +70,7 @@ impl G24Parser {
     pub fn parse_header(&mut self) -> Result<G24Header, G24ParserError> {
         let mut buf_u32 = [0u8; 4];
         let mut read_u32 = || {
-            self.0
-                .read_exact(&mut buf_u32)
-                .expect("Failed to read u32");
+            self.0.read_exact(&mut buf_u32).expect("Failed to read u32");
             u32::from_le_bytes(buf_u32)
         };
 
