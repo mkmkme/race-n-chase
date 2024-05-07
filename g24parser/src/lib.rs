@@ -4,9 +4,8 @@ use std::{
     io::{BufReader, Read},
 };
 use thiserror::Error;
+use log::warn;
 
-#[macro_use]
-extern crate log;
 
 const HEADER_GRAPHICS_VERSION: u32 = 336;
 const EXPECTED_SPRITE_NUMBER: u32 = 42;

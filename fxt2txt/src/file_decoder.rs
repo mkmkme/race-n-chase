@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufReader, Read},
+    io::{BufReader, Error, Read},
 };
 
 pub trait Decoder {
@@ -16,7 +16,7 @@ pub struct FileDecoder {
 }
 
 impl FileDecoder {
-    pub fn new(filename: &str) -> Result<FileDecoder, std::io::Error> {
+    pub fn new(filename: &str) -> Result<FileDecoder, Error> {
         let file = File::open(filename)?;
         Ok(FileDecoder {
             reader: BufReader::new(file),

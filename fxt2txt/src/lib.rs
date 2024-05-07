@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use file_decoder::Decoder;
-
-#[macro_use]
-extern crate log;
+use log::{debug, warn};
 
 pub mod file_decoder;
 
@@ -37,7 +35,7 @@ fn parse_fxt_impl<T: Decoder + Iterator<Item = char>>(decoder: T) -> HashMap<Str
     let mut parser = Parser::new(decoder);
     loop {
         let token = parser.parse_token();
-        debug!("Got token: {:?}", token);
+        debug!("Got token: {token:?}");
         match token {
             FXTToken::Key(key) => {
                 if cur_key.is_some() {
@@ -124,6 +122,7 @@ impl<T: Decoder + Iterator<Item = char>> Parser<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::Chars;
     use env_logger::Env;
 
     use super::*;
@@ -132,26 +131,31 @@ mod tests {
         "[1001]Hello, world!\u{0}[1002]Yes, it works!\u{0}[1003]One-word\u{0}[1004]tschüss\u{0}\
         [1005]Message with closing bracket] inside\u{0}\
         []\u{0}[]\u{0}";
-    struct MockDecoder(usize);
+    struct MockDecoder {
+        pos: usize,
+        chars: Chars<'static>,
+    }
 
     impl MockDecoder {
         fn new() -> MockDecoder {
-            MockDecoder(0)
+            MockDecoder {
+                pos: 0,
+                chars: CONST_STR.chars(),
+            }
         }
     }
 
     impl Decoder for MockDecoder {
         fn position(&self) -> usize {
-            self.0
+            self.pos
         }
     }
 
     impl Iterator for MockDecoder {
         type Item = char;
         fn next(&mut self) -> Option<Self::Item> {
-            let pos = self.0;
-            self.0 += 1;
-            CONST_STR.chars().nth(pos)
+            self.pos += 1;
+            self.chars.next()
         }
     }
 
