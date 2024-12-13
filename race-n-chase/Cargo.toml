@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 fxt2txt = { path = "../fxt2txt" }
 g24parser = { path = "../g24parser" }
-clap = "4.4.6"
-env_logger = "0.10.0"
-log = "0.4.20"
-main_error = "0.1.2"
-thiserror = "1.0.48"
+clap = "4"
+env_logger = "0.11"
+log = "0.4"
+main_error = "0.1"
+thiserror = "2"
