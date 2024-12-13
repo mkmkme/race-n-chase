@@ -39,7 +39,7 @@ fn cli() -> Command {
 }
 
 fn main() -> MainResult {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"));
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     let matches = cli().get_matches();
 
     match matches.subcommand() {
