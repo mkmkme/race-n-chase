@@ -1,3 +1,3 @@
 [workspace]
-members = ["car-dump", "fxt2txt", "g24parser", "race-n-chase"]
+members = ["car-dump", "font-dump", "fxt2txt", "g24parser", "race-n-chase"]
 resolver = "2"

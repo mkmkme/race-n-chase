@@ -1,8 +1,12 @@
 use clap::{arg, Command};
 use env_logger::Env;
+use font_dump::{print_bitmap, Font, FontParser};
 use g24parser::{G24Parser, G24ParserError};
 use main_error::MainResult;
 use thiserror::Error;
+
+#[macro_use]
+extern crate log;
 
 #[derive(Error, Debug)]
 enum RNCError {
@@ -36,6 +40,12 @@ fn cli() -> Command {
                 .arg(arg!([KEY] "Key to search"))
                 .arg_required_else_help(true),
         )
+        .subcommand(
+            Command::new("font-dump")
+                .about("Dump font info")
+                .arg(arg!(<FILE> "Font file"))
+                .arg_required_else_help(true),
+        )
 }
 
 fn main() -> MainResult {
@@ -55,6 +65,10 @@ fn main() -> MainResult {
             let path = sub_matches.get_one::<String>("FILE").expect("required");
             let key = sub_matches.get_one::<String>("KEY");
             return run_fxt2txt(path, key.map(|x| x.as_str()));
+        }
+        Some(("font-dump", sub_matches)) => {
+            let path = sub_matches.get_one::<String>("FILE").expect("required");
+            return run_font_dump(path);
         }
         _ => unreachable!(),
     }
@@ -76,5 +90,14 @@ fn run_dump_g24_header(filename: &str) -> MainResult {
     let mut parser = G24Parser::new(filename)?;
     let header = parser.parse_header()?;
     println!("{header}");
+    Ok(())
+}
+
+fn run_font_dump(filename: &str) -> MainResult {
+    info!("Parsing font file: {filename}");
+    let mut parser = FontParser::new(filename)?;
+    let font = Font::new(&mut parser);
+    let char_bitmap = font.character_bitmap(0);
+    print_bitmap(&char_bitmap);
     Ok(())
 }

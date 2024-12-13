@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+font_dump = { path = "../font-dump" }
 fxt2txt = { path = "../fxt2txt" }
 g24parser = { path = "../g24parser" }
 clap = "4"
