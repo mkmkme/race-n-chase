@@ -62,9 +62,9 @@ pub enum G24ParserError {
 }
 
 impl G24Parser {
-    pub fn new(filename: &str) -> Result<G24Parser, std::io::Error> {
+    pub fn new(filename: &str) -> Result<Self, std::io::Error> {
         let file = File::open(filename)?;
-        Ok(G24Parser(BufReader::new(file)))
+        Ok(Self(BufReader::new(file)))
     }
 
     pub fn parse_header(&mut self) -> Result<G24Header, G24ParserError> {
